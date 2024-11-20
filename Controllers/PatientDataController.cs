@@ -7,6 +7,7 @@ namespace DischargeSummaryWebAPIV2.Controllers
     [ApiController]
     public class PatientDataController : ControllerBase
     {
+        //private readonly UserDataRepository1 _userDataRepository = new UserDataRepository1();
         //[HttpGet("ptnumber/{ptNo}")]
         //public ActionResult<PatientData> GetPatientData(string ptNo)
         //{
@@ -35,6 +36,36 @@ namespace DischargeSummaryWebAPIV2.Controllers
         //        return StatusCode(500, $"Internal server error: {ex.Message}");
         //    }
         //}
+
+        [HttpGet("ptnumber/{ptNo}")]
+        public ActionResult<PatientData> GetPatientNumber(string ptNo)
+        {
+            try
+            {
+                var _userDataRepository = new UserDataRepository();
+                List<IpNumber> ipNumbers = _userDataRepository.GetDataOfPatient(ptNo);
+
+                if (ipNumbers.Count == 0)
+                {
+                    return NotFound("There is no patient with that ID.");
+                }
+                var dictionary = new Dictionary<string, object>();
+                dictionary["data"] = ipNumbers;
+                return Ok(ipNumbers);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
 
         [HttpGet("{ipNumber}")]
         public IActionResult GetPatientData(string ipNumber)

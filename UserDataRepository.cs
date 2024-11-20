@@ -66,6 +66,52 @@ namespace DischargeSummaryWebAPIV2
 
             return patientData;
         }
+
+        public List<IpNumber> GetDataOfPatient(string ptNo)
+        {
+            if (!int.TryParse(ptNo, out int ptNumberToSearch))
+            {
+                throw new ArgumentException("Invalid input. Please enter a valid IP number.");
+            }
+
+            //PatientData patientData = new PatientData();
+            List<IpNumber> ipNumbers = new List<IpNumber>();
+
+            using (OracleConnection conn = new OracleConnection(connectionString))
+            {
+                conn.Open();
+
+                string selectQuery = @"SELECT DISTINCT i.PT_NO,i.IP_NO FROM IPADMISS i JOIN IPPATIENTROUNDS@link_Clinical r ON i.IP_NO = r.IP_NO WHERE i.PT_NO = :ptNumber ORDER BY i.PT_NO";
+
+                using (OracleCommand cmd = new OracleCommand(selectQuery, conn))
+                {
+                    cmd.Parameters.Add(new OracleParameter("ptNumber", ptNumberToSearch));
+
+                    using (OracleDataReader reader = cmd.ExecuteReader())
+                    {
+                        bool isFirstRow = true;
+                        while (reader.Read())
+                        {
+
+
+                            ipNumbers.Add(new IpNumber
+                            {
+                                Ipnum = reader["IP_NO"].ToString()
+                            });
+                        }
+                    }
+                }
+            }
+
+            if (ipNumbers == null)
+            {
+                throw new KeyNotFoundException("No patient found with that IP number.");
+            }
+
+            return ipNumbers;
+        }
+
+
     }
 
     public class PatientData
@@ -84,6 +130,11 @@ namespace DischargeSummaryWebAPIV2
         public string AdmissionDate { get; set; }
         public string DischargeDate { get; set; }
         public List<DailyRemark> DailyRemarks { get; set; } = new List<DailyRemark>();
+    }
+
+    public class IpNumber
+    {
+        public string Ipnum { get; set; }
     }
 
     public class DailyRemark
